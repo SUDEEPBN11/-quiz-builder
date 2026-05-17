@@ -1,33 +1,63 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createSession, addQuestion, deleteQuestion, editQuestion } from '../services/api'
 import { useSession } from '../contexts/SessionContext'
 import QuestionEditor from '../components/QuestionEditor'
 import AIGenerateForm from '../components/AIGenerateForm'
 import PPTXUploader from '../components/PPTXUploader'
+import TemplatesTab from '../components/TemplatesTab'
 import ErrorBanner from '../components/ErrorBanner'
 
-const TABS = ['✏️ Manual', '✨ AI Generate', '📎 PPTX']
+const TABS = ['✏️ Manual', '✨ AI Generate', '📎 PPTX', '📋 Templates']
 
 export default function HostSetup() {
   const navigate = useNavigate()
-  const { update, session } = useSession()
+  const { update } = useSession()
 
-  const [tab,         setTab]         = useState(0)
-  const [questions,   setQuestions]   = useState([])
-  const [editIndex,   setEditIndex]   = useState(null)
-  const [showEditor,  setShowEditor]  = useState(false)
-  const [draftAI,     setDraftAI]     = useState([])
-  const [loading,     setLoading]     = useState(false)
-  const [error,       setError]       = useState(null)
-  const [sessionData, setSessionData] = useState(null)
+  // Core session state
+  const [sessionId,      setSessionId]      = useState(null)
+  const [sessionCode,    setSessionCode]    = useState(null)
+  const [presenterToken, setPresenterToken] = useState(null)
+  const [sessionReady,   setSessionReady]   = useState(false)
 
-  // Create session on mount
+  // UI state
+  const [tab,        setTab]        = useState(0)
+  const [questions,  setQuestions]  = useState([])
+  const [editIndex,  setEditIndex]  = useState(null)
+  const [showEditor, setShowEditor] = useState(false)
+  const [draftAI,    setDraftAI]    = useState([])
+  const [loading,    setLoading]    = useState(false)
+  const [initError,  setInitError]  = useState(null)
+  const [error,      setError]      = useState(null)
+
+  // Prevent double-init in StrictMode
+  const initCalled = useRef(false)
+
+  // ── Create session on mount ──────────────────────────────────────────────
   useEffect(() => {
+    if (initCalled.current) return
+    initCalled.current = true
+
+    // Restore from sessionStorage if we already created one this browser session
+    const storedToken = sessionStorage.getItem('presenterToken')
+    const storedId    = sessionStorage.getItem('sessionId')
+    const storedCode  = sessionStorage.getItem('sessionCode')
+
+    if (storedToken && storedId && storedCode) {
+      setPresenterToken(storedToken)
+      setSessionId(storedId)
+      setSessionCode(storedCode)
+      update({ sessionId: storedId, sessionCode: storedCode, presenterToken: storedToken })
+      setSessionReady(true)
+      return
+    }
+
     const init = async () => {
       try {
         const data = await createSession('Presenter')
-        setSessionData(data)
+        setPresenterToken(data.presenterToken)
+        setSessionId(data.sessionId)
+        setSessionCode(data.sessionCode)
         update({
           sessionId:      data.sessionId,
           sessionCode:    data.sessionCode,
@@ -36,95 +66,215 @@ export default function HostSetup() {
         sessionStorage.setItem('presenterToken', data.presenterToken)
         sessionStorage.setItem('sessionId',      data.sessionId)
         sessionStorage.setItem('sessionCode',    data.sessionCode)
+        setSessionReady(true)
       } catch (err) {
-        setError(err.message)
+        setInitError(err.message || 'Failed to create session. Is the backend running?')
       }
     }
-    if (!session.sessionId) init()
-    else setSessionData({ sessionId: session.sessionId, sessionCode: session.sessionCode, presenterToken: session.presenterToken })
+
+    init()
   }, [])
 
-  const presenterToken = sessionData?.presenterToken || session.presenterToken
-  const sessionId      = sessionData?.sessionId      || session.sessionId
-
+  // ── Add question manually ────────────────────────────────────────────────
   const handleAddManual = async (q) => {
-    if (!sessionId) return
+    if (!sessionReady) {
+      setError('Session is still initializing. Please wait a moment.')
+      return
+    }
     setLoading(true)
+    setError(null)
     try {
       const res = await addQuestion(sessionId, presenterToken, q)
       setQuestions(res.questions)
       setShowEditor(false)
-    } catch (err) { setError(err.message) }
-    finally { setLoading(false) }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ── Edit existing question ───────────────────────────────────────────────
   const handleEditSave = async (q) => {
     setLoading(true)
+    setError(null)
     try {
       const res = await editQuestion(sessionId, presenterToken, editIndex, q)
       setQuestions(res.questions)
       setEditIndex(null)
-    } catch (err) { setError(err.message) }
-    finally { setLoading(false) }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ── Delete question ──────────────────────────────────────────────────────
   const handleDelete = async (i) => {
     if (!confirm('Remove this question?')) return
     setLoading(true)
+    setError(null)
     try {
       const res = await deleteQuestion(sessionId, presenterToken, i)
       setQuestions(res.questions)
-    } catch (err) { setError(err.message) }
-    finally { setLoading(false) }
+      if (editIndex === i) setEditIndex(null)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ── Add a single AI draft question ───────────────────────────────────────
   const handleAddDraft = async (q) => {
+    if (!sessionReady) {
+      setError('Session is still initializing. Please wait a moment.')
+      return
+    }
     setLoading(true)
+    setError(null)
     try {
-      const res = await addQuestion(sessionId, presenterToken, { ...q, timerSeconds: 30, difficulty: q.difficulty || 'medium' })
+      const res = await addQuestion(sessionId, presenterToken, {
+        ...q,
+        timerSeconds: q.timerSeconds || 30,
+        difficulty:   q.difficulty   || 'medium',
+      })
       setQuestions(res.questions)
-    } catch (err) { setError(err.message) }
-    finally { setLoading(false) }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ── Add all AI draft questions ────────────────────────────────────────────
   const handleAddAllDrafts = async () => {
-    for (const q of draftAI) await handleAddDraft(q)
-    setDraftAI([])
+    setLoading(true)
+    setError(null)
+    try {
+      let latest = questions
+      for (const q of draftAI) {
+        const res = await addQuestion(sessionId, presenterToken, {
+          ...q,
+          timerSeconds: q.timerSeconds || 30,
+          difficulty:   q.difficulty   || 'medium',
+        })
+        latest = res.questions
+      }
+      setQuestions(latest)
+      setDraftAI([])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ── Add all template questions ───────────────────────────────────────────
+  const handleAddTemplate = async (templateQuestions) => {
+    if (!sessionReady) {
+      setError('Session is still initializing. Please wait a moment.')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      let latest = questions
+      for (const q of templateQuestions) {
+        const res = await addQuestion(sessionId, presenterToken, {
+          ...q,
+          timerSeconds: q.timerSeconds || 30,
+          difficulty:   q.difficulty   || 'medium',
+        })
+        latest = res.questions
+      }
+      setQuestions(latest)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ── Navigate to lobby ────────────────────────────────────────────────────
   const goToLobby = () => {
-    if (questions.length === 0) return setError('Add at least one question before starting.')
+    if (questions.length === 0) {
+      setError('Add at least one question before opening the lobby.')
+      return
+    }
     navigate(`/host/${sessionId}/lobby`)
   }
 
+  // ── Init error screen ────────────────────────────────────────────────────
+  if (initError) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+        <p className="text-5xl mb-4">⚠️</p>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+          Could not create session
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">{initError}</p>
+        <button
+          className="btn-primary"
+          onClick={() => {
+            setInitError(null)
+            initCalled.current = false
+            sessionStorage.removeItem('presenterToken')
+            sessionStorage.removeItem('sessionId')
+            sessionStorage.removeItem('sessionCode')
+            window.location.reload()
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
+  // ── Loading screen while session initializes ─────────────────────────────
+  if (!sessionReady) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-slate-500 dark:text-slate-400">Creating your session…</p>
+      </div>
+    )
+  }
+
+  // ── Main UI ──────────────────────────────────────────────────────────────
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-8">
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Create Quiz</h1>
-          {sessionData && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-slate-500 dark:text-slate-400">Session code:</span>
-              <span className="font-extrabold text-brand-600 dark:text-brand-400 text-lg tracking-widest">
-                {sessionData.sessionCode}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm text-slate-500 dark:text-slate-400">Session code:</span>
+            <span className="font-extrabold text-brand-600 dark:text-brand-400 text-lg tracking-widest">
+              {sessionCode}
+            </span>
+          </div>
         </div>
         <button
           className="btn-primary btn-lg"
           onClick={goToLobby}
-          disabled={questions.length === 0}
+          disabled={questions.length === 0 || loading}
         >
           Open Lobby →
         </button>
       </div>
 
-      {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
+      {/* Error banner */}
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left: question list */}
+
+        {/* ── Left: question list ─────────────────────────────────────────── */}
         <div className="lg:col-span-2 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-slate-700 dark:text-slate-300 text-sm">
@@ -136,18 +286,29 @@ export default function HostSetup() {
             <div className="card text-center py-10 text-slate-400 dark:text-slate-500">
               <p className="text-3xl mb-2">📝</p>
               <p className="text-sm">No questions yet</p>
+              <p className="text-xs mt-1">Use the panel on the right to add questions</p>
             </div>
           ) : (
             <ul className="flex flex-col gap-2">
               {questions.map((q, i) => (
-                <li key={i} className="card p-3 flex items-start gap-3">
+                <li key={q._id || i} className="card p-3 flex items-start gap-3">
                   <span className="w-6 h-6 rounded-lg bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {i + 1}
                   </span>
                   <p className="flex-1 text-sm text-slate-700 dark:text-slate-200 line-clamp-2">{q.text}</p>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => { setEditIndex(i); setShowEditor(false) }} className="btn-ghost btn-sm p-1" title="Edit">✏️</button>
-                    <button onClick={() => handleDelete(i)} className="btn-ghost btn-sm p-1 text-red-400 hover:text-red-600" title="Delete">🗑️</button>
+                    <button
+                      onClick={() => { setEditIndex(i); setShowEditor(false) }}
+                      className="btn-ghost btn-sm p-1"
+                      title="Edit"
+                      disabled={loading}
+                    >✏️</button>
+                    <button
+                      onClick={() => handleDelete(i)}
+                      className="btn-ghost btn-sm p-1 text-red-400 hover:text-red-600"
+                      title="Delete"
+                      disabled={loading}
+                    >🗑️</button>
                   </div>
                 </li>
               ))}
@@ -155,17 +316,23 @@ export default function HostSetup() {
           )}
         </div>
 
-        {/* Right: editor / AI / PPTX */}
+        {/* ── Right: editor / AI / PPTX ───────────────────────────────────── */}
         <div className="lg:col-span-3">
-          {/* Edit existing */}
+
+          {/* Edit existing question */}
           {editIndex !== null ? (
             <div className="card">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4">Edit Question {editIndex + 1}</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4">
+                Edit Question {editIndex + 1}
+              </h3>
               <QuestionEditor
                 initial={questions[editIndex]}
                 onSave={handleEditSave}
                 onCancel={() => setEditIndex(null)}
               />
+              {loading && (
+                <p className="text-xs text-slate-400 mt-2 text-center animate-pulse">Saving…</p>
+              )}
             </div>
           ) : (
             <>
@@ -186,26 +353,40 @@ export default function HostSetup() {
                 ))}
               </div>
 
-              {/* Manual tab */}
+              {/* ── Manual tab ──────────────────────────────────────────── */}
               {tab === 0 && (
                 <div className="card">
                   {showEditor ? (
-                    <QuestionEditor onSave={handleAddManual} onCancel={() => setShowEditor(false)} />
+                    <>
+                      <QuestionEditor
+                        onSave={handleAddManual}
+                        onCancel={() => setShowEditor(false)}
+                      />
+                      {loading && (
+                        <p className="text-xs text-slate-400 mt-2 text-center animate-pulse">
+                          Adding question…
+                        </p>
+                      )}
+                    </>
                   ) : (
-                    <button className="btn-primary w-full btn-lg" onClick={() => setShowEditor(true)}>
+                    <button
+                      className="btn-primary w-full btn-lg"
+                      onClick={() => setShowEditor(true)}
+                      disabled={loading}
+                    >
                       + Add Question Manually
                     </button>
                   )}
                 </div>
               )}
 
-              {/* AI tab */}
+              {/* ── AI tab ──────────────────────────────────────────────── */}
               {tab === 1 && (
                 <div className="flex flex-col gap-4">
                   <div className="card">
                     <AIGenerateForm
                       presenterToken={presenterToken}
-                      onGenerated={(qs) => setDraftAI(qs)}
+                      onGenerated={(qs) => { setDraftAI(qs); setError(null) }}
                     />
                   </div>
                   {draftAI.length > 0 && (
@@ -214,19 +395,33 @@ export default function HostSetup() {
                         <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                           Preview ({draftAI.length} questions)
                         </h3>
-                        <button className="btn-primary btn-sm" onClick={handleAddAllDrafts} disabled={loading}>
-                          Add All to Quiz
+                        <button
+                          className="btn-primary btn-sm"
+                          onClick={handleAddAllDrafts}
+                          disabled={loading}
+                        >
+                          {loading ? 'Adding…' : 'Add All to Quiz'}
                         </button>
                       </div>
                       <ul className="flex flex-col gap-2">
                         {draftAI.map((q, i) => (
                           <li key={i} className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-700/50">
-                            <span className="text-xs font-bold text-brand-600 dark:text-brand-400 mt-0.5 shrink-0">Q{i+1}</span>
+                            <span className="text-xs font-bold text-brand-600 dark:text-brand-400 mt-0.5 shrink-0">
+                              Q{i + 1}
+                            </span>
                             <div className="flex-1">
                               <p className="text-xs text-slate-700 dark:text-slate-200 font-medium">{q.text}</p>
-                              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">✓ {q.options[q.correctIndex]}</p>
+                              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                ✓ {q.options[q.correctIndex]}
+                              </p>
                             </div>
-                            <button className="btn-primary btn-sm shrink-0" onClick={() => handleAddDraft(q)} disabled={loading}>Add</button>
+                            <button
+                              className="btn-primary btn-sm shrink-0"
+                              onClick={() => handleAddDraft(q)}
+                              disabled={loading}
+                            >
+                              Add
+                            </button>
                           </li>
                         ))}
                       </ul>
@@ -235,13 +430,13 @@ export default function HostSetup() {
                 </div>
               )}
 
-              {/* PPTX tab */}
+              {/* ── PPTX tab ────────────────────────────────────────────── */}
               {tab === 2 && (
                 <div className="flex flex-col gap-4">
                   <div className="card">
                     <PPTXUploader
                       presenterToken={presenterToken}
-                      onGenerated={(qs) => setDraftAI(qs)}
+                      onGenerated={(qs) => { setDraftAI(qs); setError(null) }}
                     />
                   </div>
                   {draftAI.length > 0 && (
@@ -250,21 +445,35 @@ export default function HostSetup() {
                         <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                           Extracted Questions ({draftAI.length})
                         </h3>
-                        <button className="btn-primary btn-sm" onClick={handleAddAllDrafts} disabled={loading}>
-                          Add All
+                        <button
+                          className="btn-primary btn-sm"
+                          onClick={handleAddAllDrafts}
+                          disabled={loading}
+                        >
+                          {loading ? 'Adding…' : 'Add All'}
                         </button>
                       </div>
                       <ul className="flex flex-col gap-2">
                         {draftAI.map((q, i) => (
                           <li key={i} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-700/50 text-xs">
                             <p className="font-medium text-slate-700 dark:text-slate-200">{q.text}</p>
-                            <p className="text-emerald-600 dark:text-emerald-400 mt-0.5">✓ {q.options[q.correctIndex]}</p>
+                            <p className="text-emerald-600 dark:text-emerald-400 mt-0.5">
+                              ✓ {q.options[q.correctIndex]}
+                            </p>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* ── Templates tab ───────────────────────────────────────── */}
+              {tab === 3 && (
+                <TemplatesTab
+                  onAddAll={handleAddTemplate}
+                  loading={loading}
+                />
               )}
             </>
           )}

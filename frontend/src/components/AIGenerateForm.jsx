@@ -6,7 +6,7 @@ export default function AIGenerateForm({ presenterToken, onGenerated }) {
   const [topic,      setTopic]      = useState('')
   const [difficulty, setDifficulty] = useState('medium')
   const [count,      setCount]      = useState(5)
-  const [provider,   setProvider]   = useState('openai')
+  const [provider,   setProvider]   = useState('gemini')
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState(null)
 
