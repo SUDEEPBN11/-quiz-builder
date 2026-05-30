@@ -73,7 +73,7 @@ export default function ParticipantQuiz() {
 
     socket.on('error', ({ message }) => setError(message))
 
-    // Reconnect handling
+    
     socket.on('disconnect', () => setReconnecting(true))
     socket.on('connect', () => {
       setReconnecting(false)
@@ -104,7 +104,7 @@ export default function ParticipantQuiz() {
     socket.emit('skip_question', { sessionCode, participantToken, questionIndex: qIndex })
   }
 
-  // Reconnecting overlay
+  
   if (reconnecting) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -117,7 +117,7 @@ export default function ParticipantQuiz() {
     )
   }
 
-  // Paused overlay
+  
   if (paused) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -134,7 +134,7 @@ export default function ParticipantQuiz() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 pb-24 md:pb-6">
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
 
-      {/* Score + timer row */}
+      
       <div className="flex items-center justify-between mb-5">
         <ScoreDisplay score={score} rank={rank} delta={scoreDelta} />
         {currentQ && !revealed && (
@@ -142,7 +142,7 @@ export default function ParticipantQuiz() {
         )}
       </div>
 
-      {/* Question */}
+      
       {currentQ ? (
         <>
           <QuestionCard
@@ -156,7 +156,7 @@ export default function ParticipantQuiz() {
             disabled={revealed || expired || selectedIndex !== null}
           />
 
-          {/* Skip button */}
+          
           {!revealed && !expired && selectedIndex === null && (
             <button
               onClick={handleSkip}
@@ -166,7 +166,7 @@ export default function ParticipantQuiz() {
             </button>
           )}
 
-          {/* Feedback after answer */}
+          
           {revealed && (
             <div className={`mt-4 p-4 rounded-2xl text-center font-bold animate-bounce-in ${
               selectedIndex === correctIndex
@@ -177,7 +177,7 @@ export default function ParticipantQuiz() {
             </div>
           )}
 
-          {/* Leaderboard after answer */}
+          
           {showLB && (
             <div className="mt-4 animate-slide-up">
               <Leaderboard rankings={rankings} currentParticipantId={participantId} compact />

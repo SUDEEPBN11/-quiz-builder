@@ -43,7 +43,7 @@ export default function ParticipantSummary() {
 
       {data && (
         <div className="flex flex-col gap-6 animate-slide-up">
-          {/* Header */}
+          
           <div className="text-center">
             <div className="text-6xl mb-3">
               {data.rank === 1 ? '🥇' : data.rank === 2 ? '🥈' : data.rank === 3 ? '🥉' : '🎉'}
@@ -54,7 +54,7 @@ export default function ParticipantSummary() {
             <p className="text-slate-500 dark:text-slate-400 mt-1">Here's how you did</p>
           </div>
 
-          {/* Stats */}
+          
           <div className="grid grid-cols-3 gap-4">
             {[
               { label: 'Score',    val: data.totalScore.toLocaleString(), icon: '⭐', color: 'text-brand-600 dark:text-brand-400' },
@@ -69,7 +69,7 @@ export default function ParticipantSummary() {
             ))}
           </div>
 
-          {/* Per-question breakdown */}
+          
           <div className="card">
             <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4">Question Breakdown</h3>
             <ul className="flex flex-col gap-2">
@@ -104,7 +104,7 @@ export default function ParticipantSummary() {
             </ul>
           </div>
 
-          {/* Skipped questions */}
+          
           {data.skippedQuestions.length > 0 && (
             <div className="card border-yellow-200 dark:border-yellow-800">
               <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-3">

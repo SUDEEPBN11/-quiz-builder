@@ -2,7 +2,6 @@
 
 const { getActiveProvider } = require('../config/ai');
 
-// Lazy-load providers to avoid crashing if API keys are missing at startup
 let _providers = null;
 
 function getProviders() {
@@ -10,18 +9,12 @@ function getProviders() {
     _providers = {
       openai: require('./openai.provider'),
       gemini: require('./gemini.provider'),
+      groq:   require('./groq.provider'),
     };
   }
   return _providers;
 }
 
-/**
- * Build the structured prompt sent to the AI provider.
- * @param {string} topic
- * @param {string} difficulty  - 'easy' | 'medium' | 'hard'
- * @param {number} count
- * @returns {string}
- */
 function buildPrompt(topic, difficulty, count) {
   return `Generate ${count} multiple-choice quiz questions about the following topic at ${difficulty} difficulty level.
 
@@ -42,15 +35,9 @@ Return ONLY a valid JSON array with this exact structure (no markdown, no extra 
 ]`;
 }
 
-/**
- * Parse and validate the raw string response from an AI provider.
- * @param {string} raw
- * @returns {Array<{ text: string, options: string[], correctIndex: number }>}
- */
 function parseAndValidate(raw) {
   let parsed;
   try {
-    // Strip markdown code fences if present
     const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     parsed = JSON.parse(cleaned);
   } catch {
@@ -59,7 +46,6 @@ function parseAndValidate(raw) {
     throw err;
   }
 
-  // Accept both a bare array and { questions: [...] }
   const questions = Array.isArray(parsed) ? parsed : parsed.questions;
 
   if (!Array.isArray(questions)) {
@@ -92,18 +78,13 @@ function parseAndValidate(raw) {
   });
 }
 
-/**
- * Generate quiz questions using the configured AI provider.
- * @param {{ topic: string, difficulty: string, count: number, provider?: string }} params
- * @returns {Promise<Array>}
- */
 async function generateQuestions({ topic, difficulty = 'medium', count = 5, provider }) {
   const providerName = provider || getActiveProvider();
   const providers = getProviders();
   const impl = providers[providerName];
 
   if (!impl) {
-    const err = new Error(`Unknown AI provider: "${providerName}". Valid options: openai, gemini.`);
+    const err = new Error(`Unknown AI provider: "${providerName}". Valid options: openai, gemini, groq.`);
     err.statusCode = 400;
     throw err;
   }

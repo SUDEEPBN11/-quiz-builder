@@ -24,7 +24,7 @@ export function QuestionStatsChart({ questionStats = [] }) {
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         <Bar dataKey="Correct"   fill="#10b981" radius={[4,4,0,0]} />
-        <Bar dataKey="Incorrect" fill="#ef4444" radius={[4,4,0,0]} />
+        <Bar dataKey="Incorrect" fill="#1b271bff" radius={[4,4,0,0]} />
         <Bar dataKey="Skipped"   fill="#f59e0b" radius={[4,4,0,0]} />
       </BarChart>
     </ResponsiveContainer>

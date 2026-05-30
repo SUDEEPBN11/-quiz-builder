@@ -49,7 +49,7 @@ export default function HostAnalytics() {
 
       {data && (
         <div className="flex flex-col gap-6">
-          {/* Summary cards */}
+          
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { label: 'Participants', val: data.totalParticipants, icon: '👥', color: 'text-brand-600 dark:text-brand-400' },
@@ -65,7 +65,7 @@ export default function HostAnalytics() {
             ))}
           </div>
 
-          {/* Charts */}
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="card md:col-span-2">
               <h3 className="font-bold text-slate-700 dark:text-slate-300 text-sm mb-4">Per-Question Performance</h3>
@@ -76,7 +76,7 @@ export default function HostAnalytics() {
             </div>
           </div>
 
-          {/* Top performers */}
+          
           {data.topPerformer && (
             <div className="card bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800">
               <div className="flex items-center gap-3">
@@ -89,7 +89,7 @@ export default function HostAnalytics() {
             </div>
           )}
 
-          {/* Final leaderboard */}
+          
           <Leaderboard rankings={data.finalLeaderboard || []} />
         </div>
       )}

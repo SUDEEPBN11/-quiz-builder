@@ -9,7 +9,7 @@ export default function PPTXUploader({ presenterToken, onGenerated }) {
   const [file,       setFile]       = useState(null)
   const [difficulty, setDifficulty] = useState('medium')
   const [count,      setCount]      = useState(5)
-  const [provider,   setProvider]   = useState('openai')
+  const [provider,   setProvider]   = useState('groq')
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState(null)
 
@@ -74,6 +74,7 @@ export default function PPTXUploader({ presenterToken, onGenerated }) {
         <div>
           <label className="label">AI Provider</label>
           <select className="input" value={provider} onChange={(e) => setProvider(e.target.value)}>
+            <option value="groq">Groq (Free)</option>
             <option value="openai">OpenAI</option>
             <option value="gemini">Gemini</option>
           </select>
@@ -86,7 +87,7 @@ export default function PPTXUploader({ presenterToken, onGenerated }) {
             <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             Processing…
           </span>
-        ) : '📤 Extract & Generate Questions'}
+        ) : 'Extract & Generate Questions'}
       </button>
     </div>
   )

@@ -73,7 +73,7 @@ export default function HostQuiz() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center animate-bounce-in">
-          <div className="text-6xl mb-4">🏁</div>
+          <div className="text-6xl mb-4"> </div>
           <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Quiz Ended!</h2>
           <p className="text-slate-500 dark:text-slate-400 mt-2">Loading analytics…</p>
         </div>
@@ -85,7 +85,7 @@ export default function HostQuiz() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-24 md:pb-6">
       {error && <div className="mb-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
 
-      {/* Top bar */}
+      
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-extrabold text-slate-800 dark:text-slate-100">
@@ -100,11 +100,11 @@ export default function HostQuiz() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Main: current question + controls */}
+        
         <div className="lg:col-span-2 flex flex-col gap-4">
           {currentQ ? (
             <div className="card">
-              {/* Timer + question */}
+              
               <div className="flex items-start gap-4 mb-4">
                 <TimerRing remaining={remaining} total={currentQ.timerSeconds} size={80} />
                 <div className="flex-1">
@@ -115,7 +115,7 @@ export default function HostQuiz() {
                 </div>
               </div>
 
-              {/* Options preview */}
+              
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {currentQ.options.map((opt, i) => (
                   <div
@@ -129,7 +129,7 @@ export default function HostQuiz() {
                 ))}
               </div>
 
-              {/* Nav controls */}
+              
               <div className="flex gap-2">
                 <button onClick={() => emit('prev_question')} className="btn-secondary flex-1">← Prev</button>
                 <button onClick={() => emit('next_question')} className="btn-primary flex-1">Next →</button>
@@ -145,7 +145,7 @@ export default function HostQuiz() {
             </div>
           )}
 
-          {/* Answer stats */}
+          
           {analytics?.questionStats && analytics.questionStats[qIndex] && (
             <div className="card">
               <h3 className="font-bold text-slate-700 dark:text-slate-300 text-sm mb-3">Answer Stats</h3>
@@ -165,9 +165,9 @@ export default function HostQuiz() {
           )}
         </div>
 
-        {/* Sidebar */}
+        
         <div className="flex flex-col gap-4">
-          {/* Live stats */}
+          
           {analytics && (
             <div className="card">
               <h3 className="font-bold text-slate-700 dark:text-slate-300 text-sm mb-3">Live Stats</h3>

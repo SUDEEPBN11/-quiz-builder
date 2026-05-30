@@ -12,11 +12,6 @@ function getClient() {
   return _genAI;
 }
 
-/**
- * Generate quiz questions using Google Gemini 1.5 Flash.
- * @param {{ topic: string, difficulty: string, count: number }} params
- * @returns {Promise<Array>}
- */
 async function generate({ topic, difficulty, count }) {
   const genAI = getClient();
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });

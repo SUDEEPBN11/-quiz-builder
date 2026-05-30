@@ -12,11 +12,6 @@ function getClient() {
   return _client;
 }
 
-/**
- * Generate quiz questions using OpenAI GPT-4o-mini.
- * @param {{ topic: string, difficulty: string, count: number }} params
- * @returns {Promise<Array>}
- */
 async function generate({ topic, difficulty, count }) {
   const client = getClient();
   const prompt = buildPrompt(topic, difficulty, count);

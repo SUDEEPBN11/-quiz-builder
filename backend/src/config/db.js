@@ -14,7 +14,6 @@ async function connectDB() {
     console.log('[DB] MongoDB connected successfully.');
   } catch (err) {
     console.error('[DB] MongoDB connection error:', err.message);
-    console.error('[DB] ⚠️  Make sure MongoDB is running or set MONGODB_URI to a MongoDB Atlas connection string in backend/.env');
     process.exit(1);
   }
 

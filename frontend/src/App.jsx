@@ -21,7 +21,7 @@ export default function App() {
       <SocketProvider>
         <SessionProvider>
           <BrowserRouter>
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+            <div className="min-h-screen bg-black transition-colors duration-300">
               <Navbar />
               <main>
                 <Routes>

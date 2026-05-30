@@ -8,7 +8,6 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Response interceptor — normalize errors
 api.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -27,7 +26,6 @@ api.interceptors.response.use(
   }
 )
 
-// ── Session ──────────────────────────────────────────────────────────────────
 export const createSession = (presenterName) =>
   api.post('/sessions', { presenterName }).then((r) => r.data)
 
@@ -37,7 +35,6 @@ export const getSession = (code) =>
 export const updateSessionStatus = (sessionId, status, presenterToken) =>
   api.patch(`/sessions/${sessionId}/status`, { status, presenterToken }).then((r) => r.data)
 
-// ── Participant ───────────────────────────────────────────────────────────────
 export const joinSession = (code, displayName) =>
   api.post(`/sessions/${code}/join`, { displayName }).then((r) => r.data)
 
@@ -48,7 +45,6 @@ export const getParticipantSummary = (sessionId, participantId, participantToken
     })
     .then((r) => r.data)
 
-// ── Questions ─────────────────────────────────────────────────────────────────
 export const addQuestion = (sessionId, presenterToken, questionData) =>
   api.post(`/sessions/${sessionId}/questions`, { presenterToken, ...questionData }).then((r) => r.data)
 
@@ -58,11 +54,9 @@ export const editQuestion = (sessionId, presenterToken, index, questionData) =>
 export const deleteQuestion = (sessionId, presenterToken, index) =>
   api.delete(`/sessions/${sessionId}/questions/${index}`, { data: { presenterToken } }).then((r) => r.data)
 
-// ── AI ────────────────────────────────────────────────────────────────────────
 export const generateAIQuestions = (presenterToken, topic, difficulty, count, provider) =>
   api.post('/ai/generate', { presenterToken, topic, difficulty, count, provider }).then((r) => r.data)
 
-// ── PPTX ──────────────────────────────────────────────────────────────────────
 export const uploadPPTX = (presenterToken, file, count, difficulty, provider) => {
   const form = new FormData()
   form.append('file', file)
@@ -73,11 +67,9 @@ export const uploadPPTX = (presenterToken, file, count, difficulty, provider) =>
   return api.post('/pptx/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
 }
 
-// ── Analytics ─────────────────────────────────────────────────────────────────
 export const getAnalytics = (sessionId, presenterToken) =>
   api.get(`/sessions/${sessionId}/analytics`, { params: { presenterToken } }).then((r) => r.data)
 
-// ── Leaderboard ───────────────────────────────────────────────────────────────
 export const getLeaderboard = (sessionId) =>
   api.get(`/sessions/${sessionId}/leaderboard`).then((r) => r.data)
 

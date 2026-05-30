@@ -8,19 +8,17 @@ import PPTXUploader from '../components/PPTXUploader'
 import TemplatesTab from '../components/TemplatesTab'
 import ErrorBanner from '../components/ErrorBanner'
 
-const TABS = ['✏️ Manual', '✨ AI Generate', '📎 PPTX', '📋 Templates']
+const TABS = [' Manual', ' AI Generate', '📎 PPTX', ' Templates']
 
 export default function HostSetup() {
   const navigate = useNavigate()
   const { update } = useSession()
 
-  // Core session state
   const [sessionId,      setSessionId]      = useState(null)
   const [sessionCode,    setSessionCode]    = useState(null)
   const [presenterToken, setPresenterToken] = useState(null)
   const [sessionReady,   setSessionReady]   = useState(false)
 
-  // UI state
   const [tab,        setTab]        = useState(0)
   const [questions,  setQuestions]  = useState([])
   const [editIndex,  setEditIndex]  = useState(null)
@@ -30,15 +28,12 @@ export default function HostSetup() {
   const [initError,  setInitError]  = useState(null)
   const [error,      setError]      = useState(null)
 
-  // Prevent double-init in StrictMode
   const initCalled = useRef(false)
 
-  // ── Create session on mount ──────────────────────────────────────────────
   useEffect(() => {
     if (initCalled.current) return
     initCalled.current = true
 
-    // Restore from sessionStorage if we already created one this browser session
     const storedToken = sessionStorage.getItem('presenterToken')
     const storedId    = sessionStorage.getItem('sessionId')
     const storedCode  = sessionStorage.getItem('sessionCode')
@@ -75,7 +70,6 @@ export default function HostSetup() {
     init()
   }, [])
 
-  // ── Add question manually ────────────────────────────────────────────────
   const handleAddManual = async (q) => {
     if (!sessionReady) {
       setError('Session is still initializing. Please wait a moment.')
@@ -94,7 +88,6 @@ export default function HostSetup() {
     }
   }
 
-  // ── Edit existing question ───────────────────────────────────────────────
   const handleEditSave = async (q) => {
     setLoading(true)
     setError(null)
@@ -109,7 +102,6 @@ export default function HostSetup() {
     }
   }
 
-  // ── Delete question ──────────────────────────────────────────────────────
   const handleDelete = async (i) => {
     if (!confirm('Remove this question?')) return
     setLoading(true)
@@ -125,7 +117,6 @@ export default function HostSetup() {
     }
   }
 
-  // ── Add a single AI draft question ───────────────────────────────────────
   const handleAddDraft = async (q) => {
     if (!sessionReady) {
       setError('Session is still initializing. Please wait a moment.')
@@ -147,7 +138,6 @@ export default function HostSetup() {
     }
   }
 
-  // ── Add all AI draft questions ────────────────────────────────────────────
   const handleAddAllDrafts = async () => {
     setLoading(true)
     setError(null)
@@ -170,7 +160,6 @@ export default function HostSetup() {
     }
   }
 
-  // ── Add all template questions ───────────────────────────────────────────
   const handleAddTemplate = async (templateQuestions) => {
     if (!sessionReady) {
       setError('Session is still initializing. Please wait a moment.')
@@ -196,7 +185,6 @@ export default function HostSetup() {
     }
   }
 
-  // ── Navigate to lobby ────────────────────────────────────────────────────
   const goToLobby = () => {
     if (questions.length === 0) {
       setError('Add at least one question before opening the lobby.')
@@ -205,7 +193,6 @@ export default function HostSetup() {
     navigate(`/host/${sessionId}/lobby`)
   }
 
-  // ── Init error screen ────────────────────────────────────────────────────
   if (initError) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
@@ -231,7 +218,6 @@ export default function HostSetup() {
     )
   }
 
-  // ── Loading screen while session initializes ─────────────────────────────
   if (!sessionReady) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
@@ -241,11 +227,10 @@ export default function HostSetup() {
     )
   }
 
-  // ── Main UI ──────────────────────────────────────────────────────────────
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-8">
 
-      {/* Header */}
+      
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Create Quiz</h1>
@@ -265,7 +250,7 @@ export default function HostSetup() {
         </button>
       </div>
 
-      {/* Error banner */}
+      
       {error && (
         <div className="mb-4">
           <ErrorBanner message={error} onDismiss={() => setError(null)} />
@@ -274,7 +259,7 @@ export default function HostSetup() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-        {/* ── Left: question list ─────────────────────────────────────────── */}
+        
         <div className="lg:col-span-2 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-slate-700 dark:text-slate-300 text-sm">
@@ -284,7 +269,7 @@ export default function HostSetup() {
 
           {questions.length === 0 ? (
             <div className="card text-center py-10 text-slate-400 dark:text-slate-500">
-              <p className="text-3xl mb-2">📝</p>
+              <p className="text-3xl mb-2"> </p>
               <p className="text-sm">No questions yet</p>
               <p className="text-xs mt-1">Use the panel on the right to add questions</p>
             </div>
@@ -308,7 +293,7 @@ export default function HostSetup() {
                       className="btn-ghost btn-sm p-1 text-red-400 hover:text-red-600"
                       title="Delete"
                       disabled={loading}
-                    >🗑️</button>
+                    > </button>
                   </div>
                 </li>
               ))}
@@ -316,10 +301,10 @@ export default function HostSetup() {
           )}
         </div>
 
-        {/* ── Right: editor / AI / PPTX ───────────────────────────────────── */}
+        
         <div className="lg:col-span-3">
 
-          {/* Edit existing question */}
+          
           {editIndex !== null ? (
             <div className="card">
               <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-4">
@@ -336,7 +321,7 @@ export default function HostSetup() {
             </div>
           ) : (
             <>
-              {/* Tabs */}
+              
               <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 mb-4">
                 {TABS.map((t, i) => (
                   <button
@@ -353,7 +338,7 @@ export default function HostSetup() {
                 ))}
               </div>
 
-              {/* ── Manual tab ──────────────────────────────────────────── */}
+              
               {tab === 0 && (
                 <div className="card">
                   {showEditor ? (
@@ -380,7 +365,7 @@ export default function HostSetup() {
                 </div>
               )}
 
-              {/* ── AI tab ──────────────────────────────────────────────── */}
+              
               {tab === 1 && (
                 <div className="flex flex-col gap-4">
                   <div className="card">
@@ -430,7 +415,7 @@ export default function HostSetup() {
                 </div>
               )}
 
-              {/* ── PPTX tab ────────────────────────────────────────────── */}
+              
               {tab === 2 && (
                 <div className="flex flex-col gap-4">
                   <div className="card">
@@ -468,7 +453,7 @@ export default function HostSetup() {
                 </div>
               )}
 
-              {/* ── Templates tab ───────────────────────────────────────── */}
+              
               {tab === 3 && (
                 <TemplatesTab
                   onAddAll={handleAddTemplate}
